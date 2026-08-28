@@ -11,15 +11,16 @@ lifetime parameter specifies which argument lifetime is connected to the lifetim
 "data returned b search function lives as long as the data passed into the search function in the contents argument"
  */
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str>{
-    //unimplemented!();
-    let mut results = Vec::new();
+    /*
+    todo: 
+    For a further improvement, return an iterator from the search function by removing the call to collect and changing the return type to impl Iterator<Item = &'a str> so that the function becomes an iterator adapter. Note that you’ll also need to update the tests! Search through a large file using your minigrep tool before and after making this change to observe the difference in behavior. Before this change, the program won’t print any results until it has collected all of the results, but after the change, the results will be printed as each matching line is found because the for loop in the run function is able to take advantage of the laziness of the iterator.    
+     */
 
-    for line in contents.lines(){
-        if line.contains(query){
-            results.push(line);
-        }
-    }
-    results
+    //unimplemented!();
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(
