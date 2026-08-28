@@ -10,32 +10,27 @@ TDD:
 lifetime parameter specifies which argument lifetime is connected to the lifetime of the return value, ie. vector contains string slices that reference slices of the argument contents(rather than the query), 
 "data returned b search function lives as long as the data passed into the search function in the contents argument"
  */
-pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str>{
+pub fn search<'a>(query: &'a str, content: &'a str) -> Box<dyn Iterator<Item = &'a str> + 'a>{
     /*
-    todo: 
-    For a further improvement, return an iterator from the search function by removing the call to collect and changing the return type to impl Iterator<Item = &'a str> so that the function becomes an iterator adapter. Note that you’ll also need to update the tests! Search through a large file using your minigrep tool before and after making this change to observe the difference in behavior. Before this change, the program won’t print any results until it has collected all of the results, but after the change, the results will be printed as each matching line is found because the for loop in the run function is able to take advantage of the laziness of the iterator.    
+    Box<dyn Iterator<Item = &'a str> + 'a> the Iterator needs a lifetime param equal to the strings being iterated ie. default 'static would outlive the strings 'a so it might try to iterate on non-existent str's
      */
 
     //unimplemented!();
-    contents
+    Box::new(content
         .lines()
-        .filter(|line| line.contains(query))
-        .collect()
+        .filter( move |line| line.contains(query)))
 }
 
 pub fn search_case_insensitive<'a>(
     query: &str,
     content: &'a str,
-) -> Vec<&'a str>{
-    let query = query.to_lowercase();
-    let mut results = Vec::new();
+) -> Box<dyn Iterator<Item = &'a str> + 'a>{
 
-    for line in content.lines(){
-        if line.to_lowercase().contains(&query){
-            results.push(line);
-        }
-    }
-    results
+    let query = query.to_lowercase();
+    
+    Box::new(content
+        .lines()
+        .filter(move |line|line.to_lowercase().contains(&query)))
 }
 
 #[cfg(test)]
@@ -51,22 +46,27 @@ safe, fast, productive.
 Pick three.";
 
 
-        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+        assert_eq!("safe, fast, productive.", search(query, contents)
+            .next()
+            .expect("test search failed"));
     }
-
+ 
     #[test]
     fn case_insensitive(){
         let query = "rUsT";
-        let contents = "\
+        let content = "\
 Rust:
 safe, fast, productive.
 Pick three.
 Trust me.";
 
-        assert_eq!{
+        let results: Vec<&str> = search_case_insensitive(query, content).collect();
+
+
+        assert_eq!(
             vec!["Rust:", "Trust me."],
-            search_case_insensitive(query, contents)
-        };
+            results);
     }
+
 
 }
